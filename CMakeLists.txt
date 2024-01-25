@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.22 FATAL_ERROR)
 project(cppflow LANGUAGES CXX)
 
 include(GNUInstallDirs)
@@ -16,7 +16,7 @@ target_include_directories(cppflow
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
-target_compile_features(cppflow INTERFACE cxx_std_17)
+target_compile_features(cppflow INTERFACE cxx_std_20)
 target_link_libraries(cppflow INTERFACE
   ${tensorflow_LIBRARIES}
 )
@@ -27,7 +27,7 @@ install(
 
 
 # Build examples
-option(BUILD_EXAMPLES "Build examples" ON)
+option(BUILD_EXAMPLES "Build examples" OFF)
 if(BUILD_EXAMPLES)
   add_subdirectory(examples)
 endif()

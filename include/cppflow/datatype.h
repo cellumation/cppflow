@@ -98,12 +98,25 @@ inline std::string to_string(datatype dt) {
   }
 }
 
+template<typename T>
+concept supported_tf_type = std::same_as<T, float> ||
+                            std::same_as<T, double> ||
+                            std::same_as<T, int32_t> ||
+                            std::same_as<T, uint8_t> ||
+                            std::same_as<T, int16_t> ||
+                            std::same_as<T, int8_t> ||
+                            std::same_as<T, int64_t> ||
+                            std::same_as<T, unsigned char> ||
+                            std::same_as<T, uint16_t> ||
+                            std::same_as<T, uint32_t> ||
+                            std::same_as<T, uint64_t>;
+
 /**
  *
  * @tparam T
  * @return The TensorFlow type of T
  */
-template<typename T>
+template<supported_tf_type T>
 TF_DataType deduce_tf_type() {
   if (std::is_same<T, float>::value)
     return TF_FLOAT;
