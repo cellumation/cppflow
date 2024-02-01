@@ -11,6 +11,7 @@
 #include <vector>
 #include <limits>
 #include <algorithm>
+#include <string_view>
 
 #include <tensorflow/c/eager/c_api.h>
 #include <tensorflow/c/tf_datatype.h>
@@ -2402,7 +2403,7 @@ inline tensor batch_mat_mul(const tensor& x, const tensor& y, bool adj_x=false, 
 }
 
 
-inline tensor batch_mat_mul_v2(const tensor& x, const tensor& y, bool adj_x=false, bool adj_y=false) {
+inline tensor batch_mat_mul_v2(const tensor& x, const tensor& y, bool adj_x=false, bool adj_y=false, const std::string_view deviceName = {}) {
 
     // Define Op
     std::unique_ptr<TFE_Op, decltype(&TFE_DeleteOp)> op(TFE_NewOp(context::get_context(), "BatchMatMulV2", context::get_status()), &TFE_DeleteOp);
@@ -2421,6 +2422,12 @@ inline tensor batch_mat_mul_v2(const tensor& x, const tensor& y, bool adj_x=fals
     // Attributes
     TFE_OpSetAttrBool(op.get(), "adj_x", (unsigned char)adj_x);
     TFE_OpSetAttrBool(op.get(), "adj_y", (unsigned char)adj_y);
+
+    if (!deviceName.empty())
+    {
+        TFE_OpSetDevice(op.get(), deviceName.data(), context::get_status());
+        status_check(context::get_status());
+    }
 
     // Execute Op
     int num_outputs_op = 1;
@@ -3962,7 +3969,7 @@ inline tensor cache_dataset_v2(const tensor& input_dataset, const tensor& filena
 }
 
 
-inline tensor cast(const tensor& x, datatype SrcT, datatype DstT, bool Truncate=false) {
+inline tensor cast(const tensor& x, datatype SrcT, datatype DstT, bool Truncate=false, const std::string_view deviceName = {}) {
 
     // Define Op
     std::unique_ptr<TFE_Op, decltype(&TFE_DeleteOp)> op(TFE_NewOp(context::get_context(), "Cast", context::get_status()), &TFE_DeleteOp);
@@ -3978,6 +3985,12 @@ inline tensor cast(const tensor& x, datatype SrcT, datatype DstT, bool Truncate=
     TFE_OpSetAttrType(op.get(), "SrcT", SrcT);
     TFE_OpSetAttrType(op.get(), "DstT", DstT);
     TFE_OpSetAttrBool(op.get(), "Truncate", (unsigned char)Truncate);
+
+    if (!deviceName.empty())
+    {
+        TFE_OpSetDevice(op.get(), deviceName.data(), context::get_status());
+        status_check(context::get_status());
+    }
 
     // Execute Op
     int num_outputs_op = 1;
@@ -4439,7 +4452,7 @@ inline tensor compress_element(const std::vector<tensor>&components, const std::
 }
 
 
-inline tensor concat(const tensor& concat_dim, const std::vector<tensor>&values) {
+inline tensor concat(const tensor& concat_dim, const std::vector<tensor>&values, const std::string_view deviceName = {}) {
 
     // Define Op
     std::unique_ptr<TFE_Op, decltype(&TFE_DeleteOp)> op(TFE_NewOp(context::get_context(), "Concat", context::get_status()), &TFE_DeleteOp);
@@ -4459,6 +4472,12 @@ inline tensor concat(const tensor& concat_dim, const std::vector<tensor>&values)
 
     // Attributes
     TFE_OpSetAttrInt(op.get(), "N", values.size());
+
+    if (!deviceName.empty())
+    {
+        TFE_OpSetDevice(op.get(), deviceName.data(), context::get_status());
+        status_check(context::get_status());
+    }
 
     // Execute Op
     int num_outputs_op = 1;
@@ -7685,7 +7704,7 @@ inline tensor exp(const tensor& x) {
 }
 
 
-inline tensor expand_dims(const tensor& input, const tensor& dim, datatype Tdim=static_cast<datatype>(3)) {
+inline tensor expand_dims(const tensor& input, const tensor& dim, datatype Tdim=static_cast<datatype>(3), const std::string_view deviceName = {}) {
 
     // Define Op
     std::unique_ptr<TFE_Op, decltype(&TFE_DeleteOp)> op(TFE_NewOp(context::get_context(), "ExpandDims", context::get_status()), &TFE_DeleteOp);
@@ -7703,6 +7722,12 @@ inline tensor expand_dims(const tensor& input, const tensor& dim, datatype Tdim=
 
     // Attributes
     TFE_OpSetAttrType(op.get(), "Tdim", Tdim);
+
+    if (!deviceName.empty())
+    {
+        TFE_OpSetDevice(op.get(), deviceName.data(), context::get_status());
+        status_check(context::get_status());
+    }
 
     // Execute Op
     int num_outputs_op = 1;
@@ -9781,7 +9806,7 @@ inline tensor fused_resize_and_pad_conv2_d(const tensor& input, const tensor& si
 }
 
 
-inline tensor gather(const tensor& params, const tensor& indices, datatype Tparams, datatype Tindices, bool validate_indices=true) {
+inline tensor gather(const tensor& params, const tensor& indices, datatype Tparams, datatype Tindices, bool validate_indices=true, const std::string_view deviceName = {}) {
 
     // Define Op
     std::unique_ptr<TFE_Op, decltype(&TFE_DeleteOp)> op(TFE_NewOp(context::get_context(), "Gather", context::get_status()), &TFE_DeleteOp);
@@ -9801,6 +9826,12 @@ inline tensor gather(const tensor& params, const tensor& indices, datatype Tpara
     TFE_OpSetAttrType(op.get(), "Tparams", Tparams);
     TFE_OpSetAttrType(op.get(), "Tindices", Tindices);
     TFE_OpSetAttrBool(op.get(), "validate_indices", (unsigned char)validate_indices);
+
+    if (!deviceName.empty())
+    {
+        TFE_OpSetDevice(op.get(), deviceName.data(), context::get_status());
+        status_check(context::get_status());
+    }
 
     // Execute Op
     int num_outputs_op = 1;
@@ -14301,7 +14332,7 @@ inline tensor non_max_suppression_v2(const tensor& boxes, const tensor& scores, 
 }
 
 
-inline tensor non_max_suppression_v3(const tensor& boxes, const tensor& scores, const tensor& max_output_size, const tensor& iou_threshold, const tensor& score_threshold, datatype T_threshold=static_cast<datatype>(1)) {
+inline tensor non_max_suppression_v3(const tensor& boxes, const tensor& scores, const tensor& max_output_size, const tensor& iou_threshold, const tensor& score_threshold, datatype T_threshold=static_cast<datatype>(1), const std::string_view deviceName = {}) {
 
     // Define Op
     std::unique_ptr<TFE_Op, decltype(&TFE_DeleteOp)> op(TFE_NewOp(context::get_context(), "NonMaxSuppressionV3", context::get_status()), &TFE_DeleteOp);
@@ -14331,6 +14362,12 @@ inline tensor non_max_suppression_v3(const tensor& boxes, const tensor& scores, 
 
     // Attributes
     TFE_OpSetAttrType(op.get(), "T_threshold", T_threshold);
+
+    if (!deviceName.empty())
+    {
+        TFE_OpSetDevice(op.get(), deviceName.data(), context::get_status());
+        status_check(context::get_status());
+    }
 
     // Execute Op
     int num_outputs_op = 1;
@@ -17782,7 +17819,7 @@ inline tensor repeat_dataset(const tensor& input_dataset, const tensor& count, c
 }
 
 
-inline tensor reshape(const tensor& input_tensor, const tensor& shape, datatype Tshape=static_cast<datatype>(3)) {
+inline tensor reshape(const tensor& input_tensor, const tensor& shape, datatype Tshape=static_cast<datatype>(3), const std::string_view deviceName = {}) {
 
     // Define Op
     std::unique_ptr<TFE_Op, decltype(&TFE_DeleteOp)> op(TFE_NewOp(context::get_context(), "Reshape", context::get_status()), &TFE_DeleteOp);
@@ -17800,6 +17837,12 @@ inline tensor reshape(const tensor& input_tensor, const tensor& shape, datatype 
 
     // Attributes
     TFE_OpSetAttrType(op.get(), "Tshape", Tshape);
+
+    if (!deviceName.empty())
+    {
+        TFE_OpSetDevice(op.get(), deviceName.data(), context::get_status());
+        status_check(context::get_status());
+    }
 
     // Execute Op
     int num_outputs_op = 1;
@@ -20028,7 +20071,7 @@ inline tensor shuffle_dataset_v3(const tensor& input_dataset, const tensor& buff
 }
 
 
-inline tensor sigmoid(const tensor& x) {
+inline tensor sigmoid(const tensor& x, const std::string_view deviceName = {}) {
 
     // Define Op
     std::unique_ptr<TFE_Op, decltype(&TFE_DeleteOp)> op(TFE_NewOp(context::get_context(), "Sigmoid", context::get_status()), &TFE_DeleteOp);
@@ -20041,7 +20084,11 @@ inline tensor sigmoid(const tensor& x) {
     
 
     // Attributes
-    
+    if (!deviceName.empty())
+    {
+        TFE_OpSetDevice(op.get(), deviceName.data(), context::get_status());
+        status_check(context::get_status());
+    }
 
     // Execute Op
     int num_outputs_op = 1;
@@ -22568,7 +22615,7 @@ inline tensor squared_difference(const tensor& x, const tensor& y) {
 }
 
 
-inline tensor squeeze(const tensor& input, const std::vector<int64_t>& squeeze_dims) {
+inline tensor squeeze(const tensor& input, const std::vector<int64_t>& squeeze_dims, const std::string_view deviceName = {}) {
 
     // Define Op
     std::unique_ptr<TFE_Op, decltype(&TFE_DeleteOp)> op(TFE_NewOp(context::get_context(), "Squeeze", context::get_status()), &TFE_DeleteOp);
@@ -22582,6 +22629,12 @@ inline tensor squeeze(const tensor& input, const std::vector<int64_t>& squeeze_d
 
     // Attributes
     TFE_OpSetAttrIntList(op.get(), "squeeze_dims", squeeze_dims.data(), static_cast<int>(squeeze_dims.size()));
+
+    if (!deviceName.empty())
+    {
+        TFE_OpSetDevice(op.get(), deviceName.data(), context::get_status());
+        status_check(context::get_status());
+    }
 
     // Execute Op
     int num_outputs_op = 1;
@@ -26094,7 +26147,7 @@ inline tensor thread_pool_handle(int64_t num_threads, const std::string& display
 }
 
 
-inline tensor tile(const tensor& input, const tensor& multiples, datatype Tmultiples=static_cast<datatype>(3)) {
+inline tensor tile(const tensor& input, const tensor& multiples, datatype Tmultiples=static_cast<datatype>(3), const std::string_view deviceName = {}) {
 
     // Define Op
     std::unique_ptr<TFE_Op, decltype(&TFE_DeleteOp)> op(TFE_NewOp(context::get_context(), "Tile", context::get_status()), &TFE_DeleteOp);
@@ -26112,6 +26165,12 @@ inline tensor tile(const tensor& input, const tensor& multiples, datatype Tmulti
 
     // Attributes
     TFE_OpSetAttrType(op.get(), "Tmultiples", Tmultiples);
+
+    if (!deviceName.empty())
+    {
+        TFE_OpSetDevice(op.get(), deviceName.data(), context::get_status());
+        status_check(context::get_status());
+    }
 
     // Execute Op
     int num_outputs_op = 1;
@@ -26195,7 +26254,7 @@ inline tensor to_bool(const tensor& input) {
 }
 
 
-inline tensor transpose(const tensor& x, const tensor& perm, datatype Tperm=static_cast<datatype>(3)) {
+inline tensor transpose(const tensor& x, const tensor& perm, datatype Tperm=static_cast<datatype>(3), const std::string_view deviceName = {}) {
 
     // Define Op
     std::unique_ptr<TFE_Op, decltype(&TFE_DeleteOp)> op(TFE_NewOp(context::get_context(), "Transpose", context::get_status()), &TFE_DeleteOp);
@@ -26213,6 +26272,12 @@ inline tensor transpose(const tensor& x, const tensor& perm, datatype Tperm=stat
 
     // Attributes
     TFE_OpSetAttrType(op.get(), "Tperm", Tperm);
+
+    if (!deviceName.empty())
+    {
+        TFE_OpSetDevice(op.get(), deviceName.data(), context::get_status());
+        status_check(context::get_status());
+    }
 
     // Execute Op
     int num_outputs_op = 1;
