@@ -48,6 +48,7 @@
 #include <string>
 #include <span>
 #include <ranges>
+#include <numeric>
 
 // CppFlow headers
 #include "cppflow/context.h"
@@ -94,6 +95,10 @@ class tensor {
   template<supported_tf_type T>
   tensor(const T& value);
 
+  template<supported_tf_type T, contiguous_sized_range ShapeRange>
+  requires std::is_same_v<typename ShapeRange::value_type, int64_t>
+  tensor(T dummy, const ShapeRange& shape);
+
   tensor(const tensor &tensor) = default;
   tensor(tensor &&tensor) = default;
   explicit tensor(TFE_TensorHandle* handle);
@@ -136,7 +141,15 @@ class tensor {
    * @return A vector representing the flat tensor
    */
   template<typename T>
-  std::span<T> get_data_view() const &;
+  std::span<T> get_data_view() &;
+
+  /**
+   * Converts the tensor into a C++ vector
+   * @tparam T The c++ type (must be equivalent to the tensor type)
+   * @return A vector representing the flat tensor
+   */
+  template<typename T>
+  std::span<const T> get_data_view() const &;
 
   /* This has no implementaion because it would lead to dangling pointers*/
   template<typename T>
@@ -226,6 +239,20 @@ template<supported_tf_type T>
 tensor::tensor(const T& value)
     : tensor(std::array{value}, std::vector<int64_t>{}) {}
 
+template<supported_tf_type T, contiguous_sized_range ShapeRange>
+requires  std::is_same_v<typename ShapeRange::value_type, int64_t>
+tensor::tensor(T, const ShapeRange& shape)
+{
+  const size_t len{std::accumulate(shape.begin(), shape.end(), size_t(1), std::multiplies<size_t>{}) * sizeof(T)};
+  this->tf_tensor = {TF_AllocateTensor(deduce_tf_type<T>(), shape.data(),
+                                       static_cast<int>(shape.size()), len),
+                     TF_DeleteTensor};
+  this->tfe_handle = {TFE_NewTensorHandle(this->tf_tensor.get(),
+                                          context::get_status()),
+                      TFE_DeleteTensorHandle};
+  status_check(context::get_status());
+}
+
 inline tensor::tensor(TFE_TensorHandle* handle) {
   this->tfe_handle = {handle, TFE_DeleteTensorHandle};
 }
@@ -297,7 +324,8 @@ std::vector<T> tensor::get_data() const {
 }
 
 template<typename T>
-std::span<T> tensor::get_data_view() const & {
+std::span<T> tensor::get_data_view() &
+{
   // Check if asked datatype and tensor datatype match
   if (this->dtype() != deduce_tf_type<T>()) {
     auto type1 = cppflow::to_string(deduce_tf_type<T>());
@@ -312,6 +340,24 @@ std::span<T> tensor::get_data_view() const & {
   const size_t size = (TF_TensorByteSize(res_tensor.get()) /
                  TF_DataTypeSize(TF_TensorType(res_tensor.get())));
   return std::span<T>(static_cast<T*>(raw_data), size);
+}
+
+template<typename T>
+std::span<const T> tensor::get_data_view() const & {
+  // Check if asked datatype and tensor datatype match
+  if (this->dtype() != deduce_tf_type<T>()) {
+    auto type1 = cppflow::to_string(deduce_tf_type<T>());
+    auto type2 = cppflow::to_string(this->dtype());
+    auto error = "Datatype in function get_data (" + type1 +
+                 ") does not match tensor datatype (" + type2 + ")";
+    throw std::runtime_error(error);
+  }
+
+  auto res_tensor = get_tensor();
+  auto raw_data = TF_TensorData(res_tensor.get());
+  const size_t size = (TF_TensorByteSize(res_tensor.get()) /
+                 TF_DataTypeSize(TF_TensorType(res_tensor.get())));
+  return std::span<const T>(static_cast<T*>(raw_data), size);
 }
 
 inline datatype tensor::dtype() const {
