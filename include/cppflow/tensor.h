@@ -275,6 +275,9 @@ inline tensor tensor::shape() const {
   // Output type should be int64_t
   TFE_OpSetAttrType(op, "out_type", cppflow::datatype::TF_INT64);
 
+  TFE_OpSetDevice(op, "/device:CPU:0", context::get_status());
+  status_check(context::get_status());
+
   // EXECUTE
   int n = 1;
   TFE_TensorHandle* res[1] = { nullptr };
